@@ -1,6 +1,7 @@
 import React, { Component } from "react";
-import { graphql, compose } from "react-apollo";
-import { getBookQuery, deleteBook } from "../queries/queries";
+import { graphql } from "react-apollo";
+import { getBookQuery, deleteBook, getAllBooksQuery } from "../queries/queries";
+import { client } from "../App";
 
 class BookDetails extends Component {
   displayBookDetails() {
@@ -23,27 +24,34 @@ class BookDetails extends Component {
       return <div>No book selected.</div>;
     }
   }
-
-  deleteBook() {}
+  deleteBook() {
+    client.mutate({
+      mutation: deleteBook,
+      variables: {
+        id: this.props.bookId
+      },
+      refetchQueries: [{ query: getAllBooksQuery }]
+    });
+  }
   render() {
+    const enabled = this.props.bookId !== null;
     return (
       <div id="book-details">
         {this.displayBookDetails()}
-        <button onClick={this.deleteBook()}>Delete Book</button>
+        <button hidden={!enabled} onClick={this.deleteBook.bind(this)}>
+          Delete Book
+        </button>
       </div>
     );
   }
 }
 
-export default compose(
-  graphql(getBookQuery, {
-    options: props => {
-      return {
-        variables: {
-          id: props.bookId
-        }
-      };
-    }
-  }),
-  graphql(deleteBook, { name: "deleteBookMutation" })
-)(BookDetails);
+export default graphql(getBookQuery, {
+  options: props => {
+    return {
+      variables: {
+        id: props.bookId
+      }
+    };
+  }
+})(BookDetails);
